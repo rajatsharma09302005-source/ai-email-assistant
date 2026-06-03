@@ -1,17 +1,19 @@
 from pathlib import Path
 from decouple import config
+from datetime import timedelta
 import os
 import pymysql
-   
-#PyMySQL as MySQL driver
+
+# PyMySQL as MySQL driver
 pymysql.install_as_MySQLdb()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key')
+
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -21,12 +23,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third party apps
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
-    
+    'rest_framework_simplejwt.token_blacklist',
+
     # Local apps
     'core',
     'users',
@@ -76,23 +79,18 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD', default=''),
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default='3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
 }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 # Internationalization
@@ -104,7 +102,6 @@ USE_TZ = True
 # Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Media files
 MEDIA_URL = '/media/'
@@ -126,44 +123,47 @@ REST_FRAMEWORK = {
 }
 
 # JWT Configuration
-from datetime import timedelta
-
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=config('JWT_ACCESS_TOKEN_EXPIRE_MINUTES', default=30, cast=int)),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=config('JWT_REFRESH_TOKEN_EXPIRE_DAYS', default=7, cast=int)),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
-    'UPDATE_LAST_LOGIN': False,
-
+    'ACCESS_TOKEN_LIFETIME': timedelta(
+        minutes=config('JWT_ACCESS_TOKEN_EXPIRE_MINUTES', default=30, cast=int)
+    ),
+    'REFRESH_TOKEN_LIFETIME': timedelta(
+        days=config('JWT_REFRESH_TOKEN_EXPIRE_DAYS', default=7, cast=int)
+    ),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': config('JWT_SECRET_KEY', default=SECRET_KEY),
-    'VERIFYING_KEY': None,
-    'AUDIENCE': None,
-    'ISSUER': None,
-    'JTI_CLAIM': 'jti',
-    'TOKEN_TYPE_CLAIM': 'token_type',
-
     'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
-    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
-
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
-
-    'JTI_CLAIM': 'jti',
-
-    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
-    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://localhost:5173').split(',')
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:3000,http://localhost:5173'
+).split(',')
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
-# Logging (for debugging)
+# Google OAuth Settings
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
+GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='')
+
+# Logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
