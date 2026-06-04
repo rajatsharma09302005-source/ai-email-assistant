@@ -9,6 +9,12 @@ urlpatterns = [
 
     # Auth endpoints - /api/auth/
     path('api/auth/', include('users.urls')),
+
+    # Email CRUD endpoints - /api/emails/
+    path('api/emails/', include('emails.urls')),
+
+    # Gmail API endpoints - /api/gmail/
+    path('api/gmail/', include('gmail_integration.urls')),
 ]
 
 # Serve media files in development
