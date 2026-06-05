@@ -7,17 +7,19 @@ urlpatterns = [
     # Django admin
     path('admin/', admin.site.urls),
 
-    # Auth endpoints - /api/auth/
+    # Auth endpoints
     path('api/auth/', include('users.urls')),
 
-    # Email CRUD endpoints - /api/emails/
+    # Email CRUD endpoints
     path('api/emails/', include('emails.urls')),
 
-    # Gmail API endpoints - /api/gmail/
+    # Gmail API endpoints
     path('api/gmail/', include('gmail_integration.urls')),
+
+    # AI Assistant endpoints
+    path('api/ai/', include('ai_assistant.urls')),
 ]
 
-# Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(
         settings.MEDIA_URL,
