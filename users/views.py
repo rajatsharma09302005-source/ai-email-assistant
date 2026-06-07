@@ -202,3 +202,134 @@ class LogoutView(APIView):
                 {'error': 'Logout failed'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+            
+            
+            
+from django.conf import settings
+from google_auth_oauthlib.flow import Flow
+from google.oauth2.credentials import Credentials
+import json
+
+class GmailOAuthInitView(APIView):
+    """
+    GET /api/auth/gmail/init/
+    Initiates Gmail OAuth flow to get Gmail access token.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Gmail OAuth scopes
+        SCOPES = [
+            'openid',
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/gmail.readonly',
+            'https://www.googleapis.com/auth/gmail.send',
+            'https://www.googleapis.com/auth/gmail.modify',
+        ]
+
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": settings.GOOGLE_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": ["http://localhost:5173/gmail/callback"],
+                }
+            },
+            scopes=SCOPES
+        )
+        flow.redirect_uri = "http://localhost:5173/gmail/callback"
+
+        auth_url, state = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true',
+            prompt='consent',
+        )
+
+        # Save state in session
+        request.session['oauth_state'] = state
+
+        return Response({'auth_url': auth_url}, status=status.HTTP_200_OK)
+
+
+class GmailOAuthCallbackView(APIView):
+    """
+    POST /api/auth/gmail/callback/
+    Handles Gmail OAuth callback and saves tokens.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        code = request.data.get('code')
+
+        if not code:
+            return Response(
+                {'error': 'Authorization code is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        SCOPES = [
+            'openid',
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/gmail.readonly',
+            'https://www.googleapis.com/auth/gmail.send',
+            'https://www.googleapis.com/auth/gmail.modify',
+        ]
+
+        try:
+            flow = Flow.from_client_config(
+                {
+                    "web": {
+                        "client_id": settings.GOOGLE_CLIENT_ID,
+                        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                        "token_uri": "https://oauth2.googleapis.com/token",
+                        "redirect_uris": ["http://localhost:5173/gmail/callback"],
+                    }
+                },
+                scopes=SCOPES
+            )
+            flow.redirect_uri = "http://localhost:5173/gmail/callback"
+
+            # Exchange code for tokens
+            flow.fetch_token(code=code)
+            credentials = flow.credentials
+
+            # Save tokens to user profile
+            profile = request.user.profile
+            profile.gmail_access_token = credentials.token
+            profile.gmail_refresh_token = credentials.refresh_token or profile.gmail_refresh_token
+            profile.save()
+
+            return Response(
+                {'message': 'Gmail connected successfully!'},
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            logger.error(f"Gmail OAuth error: {str(e)}")
+            return Response(
+                {'error': f'Failed to connect Gmail: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+            
+            
+class GmailStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            profile = request.user.profile
+            connected = bool(profile.gmail_access_token)
+            return Response({
+                'connected': connected,
+                'email': request.user.email
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'connected': False
+            }, status=status.HTTP_200_OK)

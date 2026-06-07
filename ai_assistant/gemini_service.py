@@ -6,7 +6,7 @@ import time
 logger = logging.getLogger(__name__)
 
 # ✅ NEW: Using updated google-genai package
-GEMINI_MODEL = 'gemini-2.0-flash-lite'
+GEMINI_MODEL = 'gemini-3.1-flash-lite'
 
 def get_gemini_client():
     """

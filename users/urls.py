@@ -14,4 +14,11 @@ urlpatterns = [
 
     # Refresh JWT token - POST
     path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
+    
+    path('gmail/init/', views.GmailOAuthInitView.as_view(), name='gmail-init'),
+    path('gmail/callback/', views.GmailOAuthCallbackView.as_view(), name='gmail-callback'),
+    
+    # ✅ Gmail status check 
+    path('gmail/status/', views.GmailStatusView.as_view(), name='gmail-status'),
+
 ]
