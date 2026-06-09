@@ -13,30 +13,57 @@ logger = logging.getLogger(__name__)
 
 def get_gmail_service(user_profile):
     """
-    Build and return Gmail API service client using user's stored tokens.
-    
-    Args:
-        user_profile: UserProfile instance with Gmail tokens
-        
-    Returns:
-        Gmail API service object or None if failed
+    Build and return Gmail API service client.
     """
     try:
-        # Build credentials from stored tokens
+        from django.conf import settings
+        from google.auth.transport.requests import Request
+
+        # Check token exists
+        if not user_profile.gmail_access_token:
+            logger.error("No Gmail access token found")
+            return None
+
+        print(f"DEBUG - Client ID: {settings.GOOGLE_CLIENT_ID[:20]}")
+        print(f"DEBUG - Client Secret exists: {bool(settings.GOOGLE_CLIENT_SECRET)}")
+        print(f"DEBUG - Refresh token exists: {bool(user_profile.gmail_refresh_token)}")
+
+        # Build credentials
         credentials = Credentials(
             token=user_profile.gmail_access_token,
             refresh_token=user_profile.gmail_refresh_token,
             token_uri='https://oauth2.googleapis.com/token',
-            client_id='',
-            client_secret='',
+            client_id=settings.GOOGLE_CLIENT_ID,
+            client_secret=settings.GOOGLE_CLIENT_SECRET,
+            scopes=[
+                'https://www.googleapis.com/auth/gmail.readonly',
+                'https://www.googleapis.com/auth/gmail.send',
+                'https://www.googleapis.com/auth/gmail.modify',
+            ]
         )
 
-        # Build Gmail service
+        # Always refresh token to get fresh one
+        try:
+            request_obj = Request()
+            credentials.refresh(request_obj)
+            # Save refreshed token
+            user_profile.gmail_access_token = credentials.token
+            user_profile.save()
+            logger.info("Gmail token refreshed successfully")
+            print(f"DEBUG - Token refreshed successfully")
+        except Exception as e:
+            logger.error(f"Token refresh failed: {str(e)}")
+            print(f"DEBUG - Refresh error: {str(e)}")
+            return None
+
+        # Build service
         service = build('gmail', 'v1', credentials=credentials)
+        print(f"DEBUG - Service built successfully")
         return service
 
     except Exception as e:
         logger.error(f"Failed to build Gmail service: {str(e)}")
+        print(f"DEBUG - Service error: {str(e)}")
         return None
 
 
