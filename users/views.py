@@ -240,7 +240,7 @@ class GmailOAuthInitView(APIView):
             },
             scopes=SCOPES
         )
-        flow.redirect_uri = "http://localhost:5173/gmail/callback"
+        flow.redirect_uri = "https://ai-email-assistant-frontend-rajat.vercel.app/gmail/callback"
 
         auth_url, state = flow.authorization_url(
             access_type='offline',
@@ -292,7 +292,7 @@ class GmailOAuthCallbackView(APIView):
                 },
                 scopes=SCOPES
             )
-            flow.redirect_uri = "http://localhost:5173/gmail/callback"
+            flow.redirect_uri = "https://ai-email-assistant-frontend-rajat.vercel.app/gmail/callback"
 
             # Exchange code for tokens
             flow.fetch_token(code=code)

@@ -4,7 +4,7 @@ A production-grade full-stack AI Email Assistant built with Django.
 
 ## 🚀 Tech Stack
 - **Framework:** Django 4.2 + Django REST Framework
-- **Database:** MySQL
+- - **Database:** PostgreSQL (Production) / MySQL (Local Development)
 - **Authentication:** Google OAuth 2.0 + JWT
 - **AI:** Google Gemini API (gemini-3.1-flash-lite)
 - **Email:** Gmail API
@@ -22,6 +22,14 @@ A production-grade full-stack AI Email Assistant built with Django.
 - Multi-user support
 
 ## 📦 Installation
+
+## Setup Instructions
+
+### Local Development
+Uses MySQL database
+
+### Production (Render)
+Uses PostgreSQL database (DATABASE_URL provided by Render)
 
 ### 1. Clone the repository
 git clone https://github.com/rajatsharma09302005-source/ai-email-assistant.git
